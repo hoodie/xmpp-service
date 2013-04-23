@@ -5,11 +5,16 @@ repl         = require "repl"
 config       = require "./config"
 clc          = require 'cli-color'
 url          = require 'url'
+fs           = require 'fs'
+
+fs.watch '.', (event, path)-> process.exit() if path == 'chat.coffee' and event == 'change'
 
 class CoffeeChat
   # TODO: feature not implemented response\
-  # TODO: service discovery
-  # TODO: ad-hoc commands
+  # TODO: service discovery         (XEP-0030, XEP-0128)
+  # TODO: ad-hoc commands           (XEP-0050)
+  # TODO: Message Delivery Receipts (XEP-0184)
+  # TODO: Donate tu Uganda (VIM is Charityware)
 
   constructor: (@profile) ->
     @events = new EventEmitter()
@@ -50,7 +55,7 @@ class CoffeeChat
       switch url.parse(xmlns).hash
         when '#items'
           console.log(clc.yellow "#{stanza.from} requested items")
-          result = new  xmpp.Iq {type: 'result', to:stanza.from}
+          result = new  xmpp.Iq {type: 'result', to:stanza.from, id:stanza.id}
           query = result.c('query', {
             xmlns:'http://jabber.org/protocol/disco#items'
             node:'http://jabber.org/protocol/commands'})
@@ -76,8 +81,7 @@ class CoffeeChat
 
 
 
-  handle_message: (stanza) ->
-    console.log "#{clc.magenta.bold(stanza.from)}: #{clc.white.bold(stanza.getChildText('body'))}"
+  handle_message: (stanza) -> console.log "#{clc.magenta.bold(stanza.from)}: #{clc.white.bold(stanza.getChildText('body'))}"
 
   handle_presence: ->
 
@@ -121,8 +125,7 @@ class CoffeeChat
 
 global.xmpp = xmpp
 global.cc = cc = new CoffeeChat config.client_vector
-cc.connect()
-
+#cc.connect()
 
 repl.start {
   prompt: "coffee-chat: "
