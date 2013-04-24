@@ -1,4 +1,3 @@
-xmpp = require('node-xmpp')
 
 exports.xmpp_util = {
 
@@ -11,7 +10,16 @@ exports.xmpp_util = {
     ONLINE    : 'online'
     OFFLINE   : 'offline'
 
+  listeners: 'foo'
 
+
+  sendMessage: (to, message) ->
+    stanza = new xmpp.Message({ to: to, type: 'chat' })
+    stanza.c('body').t(message)
+    @client.send(stanza)
+    console.log clc.green stanza.toString()
+
+  
   setStatusMessage: (message, to = null) -> @setStatus '', message, to
 
   setStatus: (show, message, to = null) ->
@@ -23,4 +31,9 @@ exports.xmpp_util = {
     if show? and status?
       presence.c("show").t(status)
     presence.toString()
+
 }
+class XepAdHocCommand
+  constructor: (@title, @function) ->
+
+exports.XepAdHocCommand = XepAdHocCommand
