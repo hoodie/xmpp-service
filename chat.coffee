@@ -21,6 +21,7 @@ class CoffeeChat
     @events.on 'message',   @handle_message
     @events.on 'iq',        @handle_iq
     @events.on 'iq.get',    @handle_iq_get
+    @events.on 'iq.set',    @handle_iq_set
     @events.on 'presence',  @handle_presence
 
   
@@ -37,40 +38,37 @@ class CoffeeChat
       when "get" then @events.emit "iq.get", stanza
       else console.log stanza.type, stanza.attrs
 
+  xmlns:
+    items: 'http://jabber.org/protocol/disco#items'
+    info: 'http://jabber.org/protocol/disco#info'
+
+  protocols:
+    commands: 'http://jabber.org/protocol/commands'
+
   handle_iq_get: (stanza) =>
-    if stanza.getChild('ping')?
-      console.log 'ping'
-      stanza.to = stanza.from
-      stanza.from = @profile.jid
-      @client.send stanza
 
-    if stanza.getChild('time')?
-      console.log "time, #{stanza.from}"
-      @send_message(stanza.from, "entity time is not yet implemented")
+    if(query = stanza.getChild('query', @xmlns.items))?
+      console.log clc.blue query
+      iq = @compose_command_list()
+      iq.attrs['to'] = stanza.from
+      iq.attrs['id'] = stanza.id
+      console.log clc.yellow iq.toString()
+      @client.send iq
 
-    if stanza.getChild 'query'?
-      xmlns = stanza.getChild('query').attr('xmlns')
-      console.log clc.blue xmlns
+    if(query = stanza.getChild('query', @xmlns.info))?
+      console.log clc.blue query
 
-      switch url.parse(xmlns).hash
-        when '#items'
-          console.log(clc.yellow "#{stanza.from} requested items")
-          result = new  xmpp.Iq {type: 'result', to:stanza.from, id:stanza.id}
-          query = result.c('query', {
-            xmlns:'http://jabber.org/protocol/disco#items'
-            node:'http://jabber.org/protocol/commands'})
-          jid = new xmpp.JID @profile.jid
-          query.c('item',{
-            jid:jid.bare()
-            node: 'config'
-            name: "Dummy Node :D"})
-          console.log clc.green result.toString()
 
-          console.log clc.greenBright @client.send result
 
-        when '#info'
-          console.log(clc.yellow "#{stanza.from} requested features")
-        else console.log(clc.red "#{stanza.from} something funny")
+  #XEP 0050 Ad Hoc Commands
+  adhoc_commands:
+    "blub"
+  compose_command_list: ->
+    jid = @client.jid.bare().toString()
+    iq = new xmpp.Iq {type:'result'}
+    query = iq.c('query', {xmlns:@xmlns.items, node:@protocols.commands})
+    query.c 'item', {jid:jid, node:"list", name: 'lists arbitrary items'}
+    return iq
 
     
   send_message: (to, message) ->
@@ -92,7 +90,7 @@ class CoffeeChat
     @client.on 'online', =>
       @STATUS = 'online'
       console.log "should be online"
-      @send_presence('hendrik@hoodie.de')
+      @send_presence()
 
     @client.on 'stanza', (stanza) =>
       @stanzas.push stanza
@@ -125,7 +123,20 @@ class CoffeeChat
 
 global.xmpp = xmpp
 global.cc = cc = new CoffeeChat config.client_vector
-#cc.connect()
+
+cc.events.addListener 'iq.get', ->
+  if stanza.getChild('ping')?
+    console.log 'ping'
+    stanza.to = stanza.from
+    stanza.from = @profile.jid
+    @client.send stanza
+
+cc.events.addListener 'iq.get', ->
+  if stanza.getChild('time')?
+    console.log "time, #{stanza.from}"
+    @send_message(stanza.from, "entity time is not yet implemented")
+
+cc.connect()
 
 repl.start {
   prompt: "coffee-chat: "
