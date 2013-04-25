@@ -3,3 +3,4 @@ exports client_vector:
   password: 'bot'
   host: 'localhost'
   port: 5222
+  maintainer_jid: 'user@localhost'

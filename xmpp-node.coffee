@@ -13,7 +13,12 @@ class XmppNode
   # TODO: feature not implemented response\
   # TODO: service discovery         (XEP-0030, XEP-0128)
   # TODO: ad-hoc commands           (XEP-0050)
+  # TODO: Jabber RPC                (XEP-0009)
+  # TODO: PubSub                    (XEP-0060)
   # TODO: Message Delivery Receipts (XEP-0184)
+  # TODO: XMPP Ping                 (XEP-0199)
+  # TODO: Entity Time               (XEP-0202)
+  # TODO: Delayed Delivery          (XEP-0203)
   # TODO: Donate tu Uganda (VIM is Charityware)
   #
   # default events:
@@ -33,11 +38,9 @@ class XmppNode
 
   implement: (mixin) ->
     for key, value of mixin
-      switch typeof
-        when 'function' this[key] = value
-        when 'object'
-          @key = value unless @key?
-      if thy
+      switch typeof value
+        when 'function' then this[key] = value
+        when 'object' then @[key] = value unless @key?
 
 
   constructor: (@profile) ->
@@ -50,8 +53,11 @@ class XmppNode
     @events.on 'iq.set',    @handle_iq_set
 
   connect: () ->
+    console.log clc.yellow 'connecting...'
     @client = new xmpp.Client @profile
-    @client.on 'online', => @sendPresence()
+    @client.on 'online', =>
+      console.log clc.greenBright '...connected!'
+      @sendPresence()
     @client.on 'stanza', (stanza) => @events.emit 'stanza', stanza
     @client.on 'error', (error) -> console.warn clc.redBright error
 
@@ -69,17 +75,17 @@ class XmppNode
       when "set" then @events.emit "iq.set", stanza
       else console.log stanza.type, stanza.attrs
 
-  sendPresence: (to = 'hendrik@hoodie.de', set_interval = true)->
+  sendPresence: (to = @profile.maintainer_jid, set_interval = true)->
     # tell everybody
     if to?
       p = new xmpp.Element('presence', {to: to})
     else
       p = new xmpp.Element('presence')
-    @client.send p
+    console.log clc.white @client.send p
     # keep alive
     if set_interval
       setInterval (=>
-        @send_presence(to, false)
+        @sendPresence(to, false)
         console.log Date(), 'online'
       )
       ,1000 * 120

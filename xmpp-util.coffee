@@ -22,6 +22,8 @@ exports.xmpp_util = {
     @client.send(stanza)
     console.log clc.green stanza.toString()
 
+  dummyTest: ->
+    console.log @client
   
   setStatusMessage: (message, to = null) -> @setStatus '', message, to
 
