@@ -31,6 +31,15 @@ class XmppNode
   protocols:
     commands: 'http://jabber.org/protocol/commands'
 
+  implement: (mixin) ->
+    for key, value of mixin
+      switch typeof
+        when 'function' this[key] = value
+        when 'object'
+          @key = value unless @key?
+      if thy
+
+
   constructor: (@profile) ->
     @events = new EventEmitter()
     @events.on 'stanza',    @handle_stanza

@@ -1,4 +1,5 @@
-
+events    = require 'events'
+EventEmitter    = events.EventEmitter
 exports.xmpp_util = {
 
   STATUSES:
@@ -11,6 +12,8 @@ exports.xmpp_util = {
     OFFLINE   : 'offline'
 
   listeners: 'foo'
+
+  events: new EventEmitter()
 
 
   sendMessage: (to, message) ->
