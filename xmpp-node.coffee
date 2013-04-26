@@ -20,14 +20,15 @@ class XmppNode
   # TODO: Entity Time               (XEP-0202)
   # TODO: Delayed Delivery          (XEP-0203)
   # TODO: Donate tu Uganda (VIM is Charityware)
-  #
-  # default events:
-  #   stanza
-  #   message
-  #   presence
-  #   iq
-  #   iq.set
-  #   iq.get
+
+  defaultEvents: [
+    'stanza'
+    'message'
+    'presence'
+    'iq'
+    'iq.set'
+    'iq.get'
+  ]
 
   xmlns:
     items: 'http://jabber.org/protocol/disco#items'
@@ -36,15 +37,28 @@ class XmppNode
   protocols:
     commands: 'http://jabber.org/protocol/commands'
 
+  warn      : (t) -> console.log clc.redBright.bold t
+  info      : (t) -> console.log clc.blueBright.bold t
+  incomming : (t) -> console.log clc.blackBright t
+  outgoing  : (t) -> console.log clc.yellowBright t
+  success   : (t) -> console.log clc.greenBright t
+
   implement: (mixin) ->
     for key, value of mixin
       switch typeof value
         when 'function' then this[key] = value
-        when 'object' then @[key] = value unless @key?
+        when 'object'
+          unless key == 'events'
+            @[key] = value unless @key?
+          else
+            for event in @defaultEvents
+              for listener in mixin.events.listeners event
+                @events.addListener event, listener
 
 
   constructor: (@profile) ->
     @events = new EventEmitter()
+    @events.on 'test',    @info
     @events.on 'stanza',    @handle_stanza
     @events.on 'message',   @handle_message
     @events.on 'presence',  @handle_presence
@@ -53,20 +67,22 @@ class XmppNode
     @events.on 'iq.set',    @handle_iq_set
 
   connect: () ->
-    console.log clc.yellow 'connecting...'
-    @client = new xmpp.Client @profile
-    @client.on 'online', =>
-      console.log clc.greenBright '...connected!'
+    @info 'connecting...'
+    console.time 'connecting'
+    @connection = new xmpp.Client @profile
+    @connection.on 'online', =>
+      @success clc.greenBright '...connected!'
+      console.timeEnd 'connecting'
       @sendPresence()
-    @client.on 'stanza', (stanza) => @events.emit 'stanza', stanza
-    @client.on 'error', (error) -> console.warn clc.redBright error
+    @connection.on 'stanza', (stanza) => @events.emit 'stanza', stanza
+    @connection.on 'error', (error) -> console.warn clc.redBright error
 
   handle_stanza: (stanza) =>
     switch stanza.name
       when "message"  then @events.emit "message", stanza
       when "presence" then @events.emit "presence", stanza
       when "iq"       then @events.emit "iq", stanza
-      else console.error "received uncategorized stanza", clc.red stanza.toString()
+      else console.error "!", clc.red stanza.toString()
     console.log clc.blackBright stanza.toString() + "\n"
 
   handle_iq: (stanza) =>
@@ -81,7 +97,9 @@ class XmppNode
       p = new xmpp.Element('presence', {to: to})
     else
       p = new xmpp.Element('presence')
-    console.log clc.white @client.send p
+    p.c('priority').t(@profile.priority) if @profile.priority?
+    @connection.send p
+    @outgoing p.toString()
     # keep alive
     if set_interval
       setInterval (=>
@@ -103,12 +121,14 @@ class XmppNode
       iq.attrs['to'] = stanza.from
       iq.attrs['id'] = stanza.id
       console.log clc.yellow iq.toString()
-      @client.send iq
+      @connection.send iq
 
     if(query = stanza.getChild('query', @xmlns.info))?
       console.log clc.blue query
 
-  handle_message: (stanza) -> console.log "#{clc.magenta.bold(stanza.from)}: #{clc.white.bold(stanza.getChildText('body'))}"
+  handle_message: (stanza) ->
+    console.log "#{clc.magenta.bold(stanza.from)}:
+    #{clc.white.bold(stanza.getChildText('body'))}"
 
   handle_presence: ->
 
@@ -116,7 +136,7 @@ class XmppNode
   adhoc_commands:
     "blub"
   compose_command_list: ->
-    jid = @client.jid.bare().toString()
+    jid = @connection.jid.bare().toString()
     iq = new xmpp.Iq {type:'result'}
     query = iq.c('query', {xmlns:@xmlns.items, node:@protocols.commands})
     for name, command of @commands

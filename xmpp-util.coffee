@@ -1,6 +1,7 @@
 events    = require 'events'
 EventEmitter    = events.EventEmitter
-exports.xmpp_util = {
+
+util = {
 
   STATUSES:
     AVAILABLE : 'available'
@@ -19,13 +20,18 @@ exports.xmpp_util = {
   sendMessage: (to, message) ->
     stanza = new xmpp.Message({ to: to, type: 'chat' })
     stanza.c('body').t(message)
-    @client.send(stanza)
+    @connection.send(stanza)
     console.log clc.green stanza.toString()
 
-  dummyTest: ->
-    console.log @client
-  
-  setStatusMessage: (message, to = null) -> @setStatus '', message, to
+  dummyTest: -> @events.emit 'test', 'dummyTest'
+
+  probe: (buddy) ->
+    presence = new xmpp.Element('presence', {type: 'probe', to: buddy})
+    @connection.send presence
+
+  setStatusMessage: (message, to = null) ->
+    help = -> console.log "setStatusMessage()"
+    @setStatus '', message, to
 
   setStatus: (show, message, to = null) ->
     status = @STATUSES[show.toUpperCase()]
@@ -35,10 +41,16 @@ exports.xmpp_util = {
     presence.c("status").t(message) if message?
     if show? and status?
       presence.c("show").t(status)
-    presence.toString()
+    @connection.send presence
 
 }
+
+util.events.addListener 'message', (stanza) ->
+  console.log stanza.getChild('body').getText().length
+
+
 class XepAdHocCommand
   constructor: (@title, @function) ->
 
 exports.XepAdHocCommand = XepAdHocCommand
+exports.xmpp_util = util
