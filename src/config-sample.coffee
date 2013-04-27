@@ -1,4 +1,4 @@
-exports client_vector:
+module.exports = client_vector:
   jid: 'bot@localhost/coffee'
   password: 'bot'
   host: 'localhost'
