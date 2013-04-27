@@ -1,0 +1,30 @@
+{
+  "name": "node-xmpp-node",
+  "version": "0.0.0",
+  "description": "A platform to access arbitrary functionality through xmpp service discovery. Earlier then alpha :D",
+  "main": "index.js",
+  "dependencies": {
+    "cli-color": "~0.2.2",
+    "node-xmpp": "~0.3.2",
+    "vows": "~0.7.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "vows --spec"
+  },
+  "repository": {
+    "type": "git",
+    "url": "/home/hendrik/code/coffee-chat"
+  },
+  "keywords": [
+    "xmpp",
+    "node-xmpp",
+    "xep",
+    "service",
+    "discovery",
+    "rpc"
+  ],
+  "author": "Hendrik Sollich",
+  "license": "MIT",
+  "gitHead": "360ad0a3186ec0eea8d213374425c195a7b8168e"
+}
