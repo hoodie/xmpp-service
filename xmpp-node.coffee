@@ -58,12 +58,12 @@ class XmppNode
   constructor: (@profile) ->
     @events = new EventEmitter()
     @events.on 'test',    @info
-    @events.on 'stanza',    @handle_stanza
-    @events.on 'message',   @handle_message
-    @events.on 'presence',  @handle_presence
-    @events.on 'iq',        @handle_iq
-    @events.on 'iq.get',    @handle_iq_get
-    @events.on 'iq.set',    @handle_iq_set
+    @events.on 'stanza',    @handleStanza
+    @events.on 'message',   @handleMessage
+    @events.on 'presence',  @handlePresence
+    @events.on 'iq',        @handleIq
+    @events.on 'iq.get',    @handleIqGet
+    @events.on 'iq.set',    @handleIqSet
 
   connect: () ->
     @info 'connecting...'
@@ -76,7 +76,7 @@ class XmppNode
     @connection.on 'stanza', (stanza) => @events.emit 'stanza', stanza
     @connection.on 'error', (error) -> console.warn clc.redBright error
 
-  handle_stanza: (stanza) =>
+  handleStanza: (stanza) =>
     switch stanza.name
       when "message"  then @events.emit "message", stanza
       when "presence" then @events.emit "presence", stanza
@@ -84,7 +84,7 @@ class XmppNode
       else console.error "!", clc.red stanza.toString()
     console.log clc.blackBright stanza.toString() + "\n"
 
-  handle_iq: (stanza) =>
+  handleIq: (stanza) =>
     switch stanza.type
       when "get" then @events.emit "iq.get", stanza
       when "set" then @events.emit "iq.set", stanza
@@ -107,48 +107,22 @@ class XmppNode
       )
       ,1000 * 120
 
-  handle_iq_set: (stanza) =>
+  handleIqSet: (stanza) =>
     if(command = stanza.getChild('command'))?
       console.log command.attrs
 
-
-  handle_iq_get: (stanza) =>
+  handleIqGet: (stanza) =>
 
     if(query = stanza.getChild('query', @xmlns.items))?
       console.log clc.blue query
-      iq = @compose_command_list()
-      iq.attrs['to'] = stanza.from
-      iq.attrs['id'] = stanza.id
-      console.log clc.yellow iq.toString()
-      @connection.send iq
 
     if(query = stanza.getChild('query', @xmlns.info))?
       console.log clc.blue query
 
-  handle_message: (stanza) ->
+  handleMessage: (stanza) ->
     console.log "#{clc.magenta.bold(stanza.from)}:
     #{clc.white.bold(stanza.getChildText('body'))}"
 
-  handle_presence: ->
-
-  #XEP 0050 Ad Hoc Commands
-  adhoc_commands:
-    "blub"
-  compose_command_list: ->
-    jid = @connection.jid.bare().toString()
-    iq = new xmpp.Iq {type:'result'}
-    query = iq.c('query', {xmlns:@xmlns.items, node:@protocols.commands})
-    for name, command of @commands
-      query.c 'item', {jid:jid, node:name , name: command.title}
-    return iq
-
-    
-
-
-
-  commands:
-    say_hello: new XepAdHocCommand 'Call me back', ((from)=> send_message from, 'what shall I say?')
-
-  propagate_commands: ->
+  handlePresence: ->
 
 module.exports.XmppNode = XmppNode

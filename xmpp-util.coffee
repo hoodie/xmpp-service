@@ -43,6 +43,14 @@ util = {
       presence.c("show").t(status)
     @connection.send presence
 
+  composeCommandList: ->
+    jid = @connection.jid.bare().toString()
+    iq = new xmpp.Iq {type:'result'}
+    query = iq.c('query', {xmlns:@xmlns.items, node:@protocols.commands})
+    for name, command of @commands
+      query.c 'item', {jid:jid, node:name , name: command.title}
+    return iq
+
 }
 
 util.events.addListener 'message', (stanza) ->
