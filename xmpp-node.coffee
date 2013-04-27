@@ -10,7 +10,6 @@ EventEmitter    = events.EventEmitter
 XepAdHocCommand = xmpp_util.XepAdHocCommand
 
 class XmppNode
-  # TODO: feature not implemented response\
   # TODO: service discovery         (XEP-0030, XEP-0128)
   # TODO: ad-hoc commands           (XEP-0050)
   # TODO: Jabber RPC                (XEP-0009)
