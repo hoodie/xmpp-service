@@ -23,6 +23,7 @@ More to come soonish.
 * 
 
 ## Planned XEPs
+
 - [ ] service discovery         (XEP-0030, XEP-0128)
 - [ ] ad-hoc commands           (XEP-0050)
 - [ ] Jabber RPC                (XEP-0009)
