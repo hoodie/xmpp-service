@@ -29,17 +29,6 @@ global.xn  = xn = new XmppNode config.client_vector
 xn.implement xmpp_util.xmpp_util
 xn.connect()
 
-xn.events.addListener 'iq.get', (stanza, xn = xn)->
-  if stanza.getChild('ping')?
-    console.log 'ping'
-    stanza.to = stanza.from
-    stanza.from = @profile.jid
-    @client.send stanza
-
-xn.events.addListener 'iq.get', (stanza, xn = xn)->
-  if stanza.getChild('time')?
-    console.log "time, #{stanza.from}"
-    @send_message(stanza.from, "entity time is not yet implemented")
 
 
 repl.start {

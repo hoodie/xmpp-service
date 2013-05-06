@@ -28,10 +28,11 @@ class XmppNode
     'iq.set'
     'iq.get'
   ]
+  name: 'node'
 
   xmlns:
     items: 'http://jabber.org/protocol/disco#items'
-    info: 'http://jabber.org/protocol/disco#info'
+    info:  'http://jabber.org/protocol/disco#info'
 
   protocols:
     commands: 'http://jabber.org/protocol/commands'
@@ -47,11 +48,14 @@ class XmppNode
       switch typeof value
         when 'function' then this[key] = value
         when 'object'
-          unless key == 'events'
+          unless key == 'listeners'
             @[key] = value unless @key?
+            @info key
           else
-            for event in @defaultEvents
-              for listener in mixin.events.listeners event
+            for event, listeners of value
+              for name, listener of listeners
+                `__bind(listener, this)`
+                @info "#{name} for #{event}"
                 @events.addListener event, listener
 
 
@@ -64,6 +68,7 @@ class XmppNode
     @events.on 'iq',        @handleIq
     @events.on 'iq.get',    @handleIqGet
     @events.on 'iq.set',    @handleIqSet
+    @events.on 'newListener', (func) -> func.parent = this
 
   connect: () ->
     @info 'connecting...'
@@ -112,12 +117,8 @@ class XmppNode
       console.log command.attrs
 
   handleIqGet: (stanza) =>
-
-    if(query = stanza.getChild('query', @xmlns.items))?
-      console.log clc.blue query
-
-    if(query = stanza.getChild('query', @xmlns.info))?
-      console.log clc.blue query
+    @incomming query if(query = stanza.getChild('query', @xmlns.items))?
+    @incomming query if(query = stanza.getChild('query', @xmlns.info))?
 
   handleMessage: (stanza) ->
     console.log "#{clc.magenta.bold(stanza.from)}:

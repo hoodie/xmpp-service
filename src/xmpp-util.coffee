@@ -12,10 +12,6 @@ util = {
     ONLINE    : 'online'
     OFFLINE   : 'offline'
 
-  listeners: 'foo'
-
-  events: new EventEmitter()
-
 
   sendMessage: (to, message) ->
     stanza = new xmpp.Message({ to: to, type: 'chat' })
@@ -24,6 +20,7 @@ util = {
     console.log clc.green stanza.toString()
 
   dummyTest: -> @events.emit 'test', 'dummyTest'
+  profileTest: -> console.log @profile
 
   probe: (buddy) ->
     presence = new xmpp.Element('presence', {type: 'probe', to: buddy})
@@ -51,10 +48,28 @@ util = {
       query.c 'item', {jid:jid, node:name , name: command.title}
     return iq
 
-}
+  name: 'util'
 
-util.events.addListener 'message', (stanza) ->
-  console.log stanza.getChild('body').getText().length
+  listeners:
+    'iq.get': {
+      handleTime: (stanza) =>
+        if stanza.getChild('time')?
+          console.log "time, #{stanza.from}"
+          @sendMessage(stanza.from, "entity time is not yet implemented")
+
+      handlePing: (stanza) ->
+        if stanza.getChild('ping')?
+          console.log this
+          console.log typeof this
+          console.log this.name
+          console.log @profile
+          #console.log 'ping'
+          #stanza.to = stanza.from
+          #stanza.from = @profile.jid
+          #@client.send stanza
+
+    }
+}
 
 
 class XepAdHocCommand
