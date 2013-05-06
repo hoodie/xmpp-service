@@ -1,7 +1,20 @@
-events    = require 'events'
-EventEmitter    = events.EventEmitter
+clc       = require 'cli-color'
+class XmppBasics
 
-util = {
+  warn      : (t) -> console.log clc.redBright.bold t
+  info      : (t) -> console.log clc.blueBright.bold t
+  incomming : (t) -> console.log clc.blackBright t
+  outgoing  : (t) -> console.log clc.yellowBright t
+  success   : (t) -> console.log clc.greenBright t
+
+  #constructor: (@profile) ->
+  #  #super @profile if super?
+  #  @warn "XmppBasics"
+  #  if @events?
+  #    @success 'events imported'
+  #    @events.on 'iq.get', @handleTime
+  #    @events.on 'iq.get', @handlePing
+
 
   STATUSES:
     AVAILABLE : 'available'
@@ -19,7 +32,10 @@ util = {
     @connection.send(stanza)
     console.log clc.green stanza.toString()
 
-  dummyTest: -> @events.emit 'test', 'dummyTest'
+  dummyTest:
+    -> @info 'dummytest'
+  #dummyTest: -> @events.emit 'test', 'dummyTest'
+
   profileTest: -> console.log @profile
 
   probe: (buddy) ->
@@ -50,30 +66,21 @@ util = {
 
   name: 'util'
 
-  listeners:
-    'iq.get': {
-      handleTime: (stanza) =>
-        if stanza.getChild('time')?
-          console.log "time, #{stanza.from}"
-          @sendMessage(stanza.from, "entity time is not yet implemented")
+  handleTime: (stanza) =>
+    if stanza.getChild('time')?
+      console.log "time, #{stanza.from}"
+      @sendMessage(stanza.from, "entity time is not yet implemented")
 
-      handlePing: (stanza) ->
-        if stanza.getChild('ping')?
-          console.log this
-          console.log typeof this
-          console.log this.name
-          console.log @profile
-          #console.log 'ping'
-          #stanza.to = stanza.from
-          #stanza.from = @profile.jid
-          #@client.send stanza
-
-    }
-}
+  handlePing: (stanza) =>
+    if stanza.getChild('ping')?
+      console.log this
+      console.log typeof this
+      console.log this.name
+      console.log @profile
+      #console.log 'ping'
+      #stanza.to = stanza.from
+      #stanza.from = @profile.jid
+      #@client.send stanza
 
 
-class XepAdHocCommand
-  constructor: (@title, @function) ->
-
-exports.XepAdHocCommand = XepAdHocCommand
-exports.xmpp_util = util
+module.exports.XmppBasics = XmppBasics

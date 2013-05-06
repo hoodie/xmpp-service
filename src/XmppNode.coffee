@@ -4,10 +4,7 @@ xmpp      = require "node-xmpp"
 clc       = require 'cli-color'
 events    = require 'events'
 
-xmpp_util = require "./xmpp-util"
-
 EventEmitter    = events.EventEmitter
-XepAdHocCommand = xmpp_util.XepAdHocCommand
 
 class XmppNode
   # TODO: service discovery         (XEP-0030, XEP-0128)
@@ -43,23 +40,8 @@ class XmppNode
   outgoing  : (t) -> console.log clc.yellowBright t
   success   : (t) -> console.log clc.greenBright t
 
-  implement: (mixin) ->
-    for key, value of mixin
-      switch typeof value
-        when 'function' then this[key] = value
-        when 'object'
-          unless key == 'listeners'
-            @[key] = value unless @key?
-            @info key
-          else
-            for event, listeners of value
-              for name, listener of listeners
-                `__bind(listener, this)`
-                @info "#{name} for #{event}"
-                @events.addListener event, listener
-
-
   constructor: (@profile) ->
+    @warn "XmppNode"
     @events = new EventEmitter()
     @events.on 'test',    @info
     @events.on 'stanza',    @handleStanza
@@ -124,6 +106,6 @@ class XmppNode
     console.log "#{clc.magenta.bold(stanza.from)}:
     #{clc.white.bold(stanza.getChildText('body'))}"
 
-  handlePresence: ->
+  handlePresence: -> @info 'presence'
 
 module.exports.XmppNode = XmppNode
