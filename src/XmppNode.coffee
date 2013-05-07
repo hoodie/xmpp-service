@@ -100,8 +100,8 @@ class module.exports.XmppNode extends CliAble
     date = new Date()
     iq = new xmpp.Iq {type: 'result', from: @profile.jid, to: stanza.from, id: stanza.id}
     iq.c('time', {xmlns: @XMLNS.TIME})
-      .c('tzo').t(date.getTimezoneOffset())
-      .c('o').t(date.toISOString())
+      .c('tzo').t(date.getTimezoneOffset()).up()
+      .c('utc').t(date.toISOString())
     @connection.send iq
     @outgoing iq.toString()
 
