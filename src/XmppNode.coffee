@@ -21,11 +21,13 @@ class module.exports.XmppNode extends CliAble
   XMLNS:
     ITEMS: 'http://jabber.org/protocol/disco#items'
     INFO:  'http://jabber.org/protocol/disco#info'
+    PING:  'urn:xmpp:ping'
     TIME:  'urn:xmpp:time'
 
 
   #TODO: propagate features
   FEATURES: [
+    'urn:xmpp:ping' # (XEP-0199) XMPP Ping
     'urn:xmpp:time' # (XEP-0202) Entity Time
   ]
 
@@ -96,7 +98,7 @@ class module.exports.XmppNode extends CliAble
     @handlePing stanza if stanza.getChild('ping')?  # (XEP-0199) XMPP Ping
 
   # (XEP-0202) Entity Time
-  handleTime: (stanza = new xmpp.Iq({type:'get', from: 'dummy', id:'fake'})) =>
+  handleTime: (stanza = new xmpp.Iq({type:'get', from: 'dummy', id:'fake'})) ->
     date = new Date()
     iq = new xmpp.Iq {type: 'result', from: @profile.jid, to: stanza.from, id: stanza.id}
     iq.c('time', {xmlns: @XMLNS.TIME})
@@ -107,16 +109,12 @@ class module.exports.XmppNode extends CliAble
 
 
 
-  # TODO: (XEP-0199) XMPP Ping
-  handlePing: (stanza) =>
-    console.log this
-    console.log typeof this
-    console.log this.name
-    console.log @profile
-    #console.log 'ping'
-    #stanza.to = stanza.from
-    #stanza.from = @profile.jid
-    #@client.send stanza
+  # (XEP-0199) XMPP Ping
+  handlePing: (stanza) ->
+    iq = new xmpp.Iq {type: 'result', from: @profile.jid, to: stanza.from, id: stanza.id}
+    @connection.send iq
+    @outgoing iq.toString()
+
 
   sendMessage: (to, message) ->
     stanza = new xmpp.Message({ to: to, type: 'chat' })
