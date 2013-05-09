@@ -5,3 +5,4 @@ module.exports = client_vector:
   port: 5222
   priority: 5
   maintainer_jid: 'user@localhost'
+  type: 'CLIENT' # CLIENT or COMPONENT
