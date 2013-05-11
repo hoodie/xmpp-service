@@ -8,11 +8,12 @@ XmppPresence = require('./XmppPresence').XmppPresence
 
 # TODO: Jabber RPC                (XEP-0009)
 # TODO: PubSub                    (XEP-0060)
+# TODO: Entity Capabilities       (XEP-0115)
 # TODO: Delayed Delivery          (XEP-0203)
 # TODO: Donate tu Uganda (VIM is Charityware)
 # TODO: Message Delivery Receipts (XEP-0184)
 #
-# rethink:
+# TODO: rethink:
 #   stanza -> dispatchStanza
 #     -> <presence>
 #     -> <message>
@@ -40,7 +41,7 @@ class module.exports.XmppNode extends CliAble
     'urn:xmpp:ping'                          # (XEP-0199) XMPP Ping
     'urn:xmpp:receipts'                      # (XEP-0199) XMPP Ping
     'urn:xmpp:time'                          # (XEP-0202) Entity Time
-    #'urn:xmpp:version'                       # (XEP-0092) Software Version
+   #'urn:xmpp:version'                       # (XEP-0092) Software Version # NOT IMPLEMENTED
   ]
 
   TYPES:
@@ -50,15 +51,6 @@ class module.exports.XmppNode extends CliAble
   PROTOCOLS:
     COMMANDS: 'http://jabber.org/protocol/commands'
 
-  STATUSES:
-    AVAILABLE : 'available'
-    CHAT      : 'chat'
-    AWAY      : 'away'
-    DND       : 'dnd'
-    XA        : 'xa'
-    ONLINE    : 'online'
-    OFFLINE   : 'offline'
-
   constructor: (@config) ->
     @success "XmppNode"
     {@host, @jid, @type} = @config
@@ -66,10 +58,10 @@ class module.exports.XmppNode extends CliAble
 
     @events = new EventEmitter()
 
-    @events.on 'stanza',    @dispatchStanza
-    @events.on 'message',   @dispatchMessage
+    @events.on 'stanza',    @stanzaPrint
+    #@events.on 'message',   @dispatchMessage
     #@events.on 'presence',  @dispatchPresence
-    @events.on 'iq',        @dispatchIq
+    #@events.on 'iq',        @dispatchIq
     #@events.on 'iq.get',    @dispatchIqGet
     #@events.on 'iq.set',    @dispatchIqSet
 
@@ -82,7 +74,7 @@ class module.exports.XmppNode extends CliAble
       else
         @connection = undefined
         throw new Error "Undefined type off connection - Check config.coffee"
-    @presence = new XmppPresence @config, @connection
+    @presence = new XmppPresence this
 
     @connection.on 'online', =>
       @success '...connected!'
@@ -90,36 +82,64 @@ class module.exports.XmppNode extends CliAble
       @presence.send() if @TYPES[@type] == 'client'
 
     @connection.on 'stanza', (stanza) =>
-      @events.emit 'stanza', stanza
+      @dispatchStanza stanza
 
     @connection.on 'error', (error) ->
       throw error
     return
 
-  dispatchStanza: (stanza) =>
-    switch stanza.name
-      when 'message'  then @events.emit 'message', stanza
-      when 'presence' then @events.emit 'presence', stanza
-      when 'iq'       then @events.emit 'iq', stanza
-      else @error "!", stanza.toString()
+  send: (stanza) -> @connection.send stanza
 
-  dispatchIq: (stanza) =>
+  sendMessage: (to, message) ->
+    stanza = new xmpp.Message({ to: to, type: 'chat' })
+    stanza.c('body').t(message)
+    @connection.send(stanza)
+    console.log clc.green stanza.toString()
+
+
+  ###
+  # Dispatchers
+  ###
+  dispatchStanza: (stanza) ->
+    @events.emit 'stanza', stanza
+    switch stanza.name
+      when 'message'  then @dispatchMessage stanza
+      when 'presence' then @dispatchPresence stanza
+      when 'iq'       then @dispatchIq stanza
+      else @error "!", stanza.toString()
+  dispatchPresence: (stanza) ->
+    @events.emit 'presence', stanza
+
+  dispatchIq: (stanza) ->
+    @events.emit 'iq', stanza
     switch stanza.type
-      when 'get' then @events.emit 'iq.get', stanza
-      when 'set' then @events.emit 'iq.set', stanza
+      when 'get' then @dispatchIqGet stanza
+      when 'set' then @dispatchIqSet stanza
       else console.log stanza.type, stanza.attrs
 
-  dispatchMessage: (stanza) ->
-    console.log "#{clc.magenta.bold(stanza.from)}:
-    #{clc.white.bold(stanza.getChildText('body'))}"
+  dispatchIqSet: (stanza) ->
 
-  dispatchIqSet: (stanza) =>
-
-  dispatchIqGet: (stanza) =>
+  dispatchIqGet: (stanza) ->
     @handleTime stanza if stanza.getChild('time')?  # (XEP-0202) Entity Time
     @handlePing stanza if stanza.getChild('ping')?  # (XEP-0199) XMPP Ping
 
-  handleStanza: (stanza) ->
+  dispatchMessage: (stanza) ->
+    @handleMessage stanza
+
+
+
+
+
+
+
+  ###
+  # Handlers
+  ###
+  handleMessage: (message) =>
+    console.log "#{clc.magenta.bold(message.from)}:
+    #{clc.white.bold(message.getChildText('body'))}"
+
+  stanzaPrint: (stanza) =>
     unless stanza.type == 'error'
       @incomming stanza.toString()
     else
@@ -135,18 +155,9 @@ class module.exports.XmppNode extends CliAble
     @connection.send iq
     @outgoing iq.toString()
 
-
-
   # (XEP-0199) XMPP Ping
   handlePing: (stanza) ->
     iq = new xmpp.Iq {type: 'result', from: @jid, to: stanza.from, id: stanza.id}
     @connection.send iq
     @outgoing iq.toString()
 
-  send: (stanza) -> @connection.send stanza
-
-  sendMessage: (to, message) ->
-    stanza = new xmpp.Message({ to: to, type: 'chat' })
-    stanza.c('body').t(message)
-    @connection.send(stanza)
-    console.log clc.green stanza.toString()

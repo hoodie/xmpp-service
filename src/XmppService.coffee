@@ -22,9 +22,14 @@ class exports.XmppService extends XmppNode
     @events.on 'iq.get', @dispatchIqGet
     @events.on 'iq.set', @dispatchIqSet
 
-  dispatchIqSet: (stanza) =>
+   
+  ###
+  # Dispatchers
+  # TODO: do we need dispatchers outside XmppNode.coffee?
+  ###
+  dispatchIqSet: (stanza) ->
 
-  dispatchIqGet: (stanza) =>
+  dispatchIqGet: (stanza) ->
     if(stanza.getChild('query', @XMLNS.ITEMS))?
       @warn 'items request (UNIMPLEMENTED)'
     if(stanza.getChild('query', @XMLNS.INFO))?

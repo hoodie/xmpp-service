@@ -1,20 +1,31 @@
 xmpp      = require "node-xmpp"
 CliAble = require('./CliAble').CliAble
 
-
+# TODO: Entity Capabilities       (XEP-0115)
 
 class exports.XmppPresence extends CliAble
 
-  constructor: (@profile, @connection) ->
+  STATUSES:
+    AVAILABLE : 'available'
+    CHAT      : 'chat'
+    AWAY      : 'away'
+    DND       : 'dnd'
+    XA        : 'xa'
+    ONLINE    : 'online'
+    OFFLINE   : 'offline'
 
-  send: (to = @profile.maintainer_jid, set_interval = true)->
+  constructor: (@node) ->
+    {@config} = @node
+
+
+  send: (to = @config.maintainer_jid, set_interval = true)->
     # tell everybody
     if to?
       p = new xmpp.Element('presence', {to: to})
     else
       p = new xmpp.Element('presence')
-    p.c('priority').t(@profile.priority) if @profile.priority?
-    @connection.send p
+    p.c('priority').t(@config.priority) if @config.priority?
+    @node.send p
     @outgoing p.toString()
     # keep alive
     if set_interval
@@ -26,11 +37,7 @@ class exports.XmppPresence extends CliAble
 
   probe: (buddy) ->
     presence = new xmpp.Element('presence', {type: 'probe', to: buddy})
-    @connection.send presence
-
-  setStatusMessage: (message, to = null) ->
-    help = -> console.log "setStatusMessage()"
-    @setStatus '', message, to
+    @node.send presence
 
   setStatus: (show, message, to = null) ->
     status = @STATUSES[show.toUpperCase()]
@@ -40,6 +47,6 @@ class exports.XmppPresence extends CliAble
     presence.c("status").t(message) if message?
     if show? and status?
       presence.c("show").t(status)
-    @connection.send presence
+    @node.send presence
 
   handlePresence: -> @info 'presence'
