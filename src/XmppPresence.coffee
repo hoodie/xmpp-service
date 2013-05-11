@@ -16,6 +16,7 @@ class exports.XmppPresence extends CliAble
 
   constructor: (@node) ->
     {@config} = @node
+    @presenceRefresh = 10
 
 
   send: (to = @config.maintainer_jid, set_interval = true)->
@@ -26,18 +27,13 @@ class exports.XmppPresence extends CliAble
       p = new xmpp.Element('presence')
     p.c('priority').t(@config.priority) if @config.priority?
     @node.send p
-    @outgoing p.toString()
     # keep alive
     if set_interval
       setInterval (=>
         @send(to, false)
         console.log Date(), 'online'
       )
-      ,1000 * 120
-
-  probe: (buddy) ->
-    presence = new xmpp.Element('presence', {type: 'probe', to: buddy})
-    @node.send presence
+      ,1000 * @presenceRefresh
 
   setStatus: (show, message, to = null) ->
     status = @STATUSES[show.toUpperCase()]
@@ -48,5 +44,18 @@ class exports.XmppPresence extends CliAble
     if show? and status?
       presence.c("show").t(status)
     @node.send presence
+
+  probe: (buddy) ->
+    presence = new xmpp.Presence {type: 'probe', to: buddy}
+    @node.send presence
+
+  subscribe: (jid) ->
+    @node.send new xmpp.Presence {to: jid, type: 'subscribe'}
+
+  unsubscribe: (jid) ->
+    @node.send new xmpp.Presence {to: jid, type: 'unsubscribe'}
+
+  acceptUnsubscribe: (jid) ->
+    @node.send new xmpp.Presence {to: jid, type: 'unsubscribed'}
 
   handlePresence: -> @info 'presence'

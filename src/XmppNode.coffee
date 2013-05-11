@@ -28,10 +28,11 @@ class module.exports.XmppNode extends CliAble
   defaultEvents: ['stanza', 'message', 'presence', 'iq', 'iq.set', 'iq.get']
 
   XMLNS:
-    ITEMS: 'http://jabber.org/protocol/disco#items'
-    INFO:  'http://jabber.org/protocol/disco#info'
-    PING:  'urn:xmpp:ping'
-    TIME:  'urn:xmpp:time'
+    ITEMS:  'http://jabber.org/protocol/disco#items'
+    INFO:   'http://jabber.org/protocol/disco#info'
+    PING:   'urn:xmpp:ping'
+    TIME:   'urn:xmpp:time'
+    ROSTER: 'jabber:iq:roster'
 
 
   #TODO: propagate features
@@ -59,11 +60,12 @@ class module.exports.XmppNode extends CliAble
     @events = new EventEmitter()
 
     @events.on 'stanza',    @stanzaPrint
-    #@events.on 'message',   @dispatchMessage
-    #@events.on 'presence',  @dispatchPresence
-    #@events.on 'iq',        @dispatchIq
-    #@events.on 'iq.get',    @dispatchIqGet
-    #@events.on 'iq.set',    @dispatchIqSet
+    @events.on 'message',  ->
+    @events.on 'presence', ->
+    @events.on 'iq',       ->
+    @events.on 'iq.get',   ->
+    @events.on 'iq.set',   ->
+    @events.on 'send',     @stanzaPrint
 
   connect: () ->
     @info 'connecting...'
@@ -88,13 +90,20 @@ class module.exports.XmppNode extends CliAble
       throw error
     return
 
-  send: (stanza) -> @connection.send stanza
+  send: (stanza) ->
+    @events.emit 'send', stanza
+    @connection.send stanza
 
   sendMessage: (to, message) ->
     stanza = new xmpp.Message({ to: to, type: 'chat' })
     stanza.c('body').t(message)
     @connection.send(stanza)
-    console.log clc.green stanza.toString()
+
+  requestRoster:  ->
+    # TODO: implement watching for return ids
+    iq = new xmpp.Iq { id: 'roster42', type: 'get' }
+    iq.c 'query', { xmlns: @XMLNS.ROSTER }
+    @send iq
 
 
   ###
@@ -110,18 +119,26 @@ class module.exports.XmppNode extends CliAble
   dispatchPresence: (stanza) ->
     @events.emit 'presence', stanza
 
+  dispatchPresence: (stanza) ->
+    @events.emit 'presence', stanza
+
   dispatchIq: (stanza) ->
     @events.emit 'iq', stanza
     switch stanza.type
       when 'get' then @dispatchIqGet stanza
       when 'set' then @dispatchIqSet stanza
+      when 'result' then @dispatchIqResult stanza
       else console.log stanza.type, stanza.attrs
+
+  dispatchIqGet: (stanza) ->
+    @events.emit 'iq.get', stanza
+    @handlePing(stanza) for ping in stanza.getChildren('ping', @XMLNS.PING) # (XEP-0199) XMPP Ping
+    @handleTime(stanza) for time in stanza.getChildren('time', @XMLNS.TIME) # (XEP-0202) Entity Time
 
   dispatchIqSet: (stanza) ->
 
-  dispatchIqGet: (stanza) ->
-    @handleTime stanza if stanza.getChild('time')?  # (XEP-0202) Entity Time
-    @handlePing stanza if stanza.getChild('ping')?  # (XEP-0199) XMPP Ping
+  dispatchIqResult: (stanza) ->
+    #@handleRoster stanza if stanza.getChild()
 
   dispatchMessage: (stanza) ->
     @handleMessage stanza
@@ -141,7 +158,10 @@ class module.exports.XmppNode extends CliAble
 
   stanzaPrint: (stanza) =>
     unless stanza.type == 'error'
-      @incomming stanza.toString()
+      if stanza.to == @config.jid
+        @incomming stanza.toString()
+      else
+        @outgoing stanza.toString()
     else
       @error stanza.toString()
 
@@ -153,11 +173,9 @@ class module.exports.XmppNode extends CliAble
       .c('tzo').t(date.getTimezoneOffset()).up()
       .c('utc').t(date.toISOString())
     @connection.send iq
-    @outgoing iq.toString()
 
   # (XEP-0199) XMPP Ping
   handlePing: (stanza) ->
+    @warn 'PING', @XMLNS.PING
     iq = new xmpp.Iq {type: 'result', from: @jid, to: stanza.from, id: stanza.id}
     @connection.send iq
-    @outgoing iq.toString()
-

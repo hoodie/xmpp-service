@@ -5,7 +5,7 @@ class module.exports.CliAble
   warn      : (t) -> console.log   clc.redBright.bold   "!#{t}"
   info      : (t) -> console.log   clc.blueBright.bold  "#{t}"
  #incomming : (t) -> console.log   clc.blackBright      "#{t}"
-  incomming : (t) -> console.log   clc.blackBright      "\n→\n#{t}"
-  outgoing  : (t) -> console.log   clc.yellowBright     "\n←\n#{t}"
+  incomming : (t) -> console.log   clc.blackBright      "\n→ #{t}"
+  outgoing  : (t) -> console.log   clc.yellowBright     "\n← #{t}"
   success   : (t) -> console.log   clc.greenBright      "#{t}"
 
