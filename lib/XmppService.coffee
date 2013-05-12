@@ -20,8 +20,9 @@ class exports.XmppService extends XmppNode
       name:'alpha', callback: -> console.log 'alpha'
     beta:
       name:'beta', callback: -> console.log 'beta'
-    gamma:
-      name:'gamma', callback: -> console.log 'gamma'
+  PRIVATE_ITEMS: # only visible to same JID
+    exit:
+      name:'End Process', callback: -> process.exit()
   
   #REMOTECONTROL: # TODO XEP 0146
 
@@ -64,9 +65,21 @@ class exports.XmppService extends XmppNode
     #  query.c('item',{jid: @JID , name: item.name, node: "http://jabber.org/protocol/rc##{node}"})
 
     # TODO XEP-0050
+    from = new xmpp.JID stanza.from
+    if @jidIsPrivileged(from)
+      for node, item of @PRIVATE_ITEMS
+        query.c('item',{jid: @JID , name: item.name, node: node})
     for node, item of @ITEMS
       query.c('item',{jid: @JID , name: item.name, node: node})
     @send iq
+
+
+  jidIsPrivileged: (jid)->
+    jid = new xmpp.JID(jid) if typeof jid == 'string'
+
+    jid.bare().toString() == @JID.bare().toString() or
+      jid.bare().toString() == new xmpp.JID(@config.maintainer_jid).bare().toString()
+
 
 
 
@@ -83,3 +96,6 @@ class exports.XmppService extends XmppNode
     for command in commands
       if command.attrs.node in Object.keys @ITEMS
         @ITEMS[command.attrs.node].callback.call()
+    if @jidIsPrivileged(command.parent.from)
+      if command.attrs.node in Object.keys @PRIVATE_ITEMS
+        @PRIVATE_ITEMS[command.attrs.node].callback.call()

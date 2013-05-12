@@ -57,8 +57,9 @@ class module.exports.XmppNode extends CliAble
 
     @events = new EventEmitter()
 
-    if @config.type == @TYPES.CLIENT
+    if @TYPES[@config.type] == @TYPES.CLIENT
       @events.on 'online', =>
+        console.log 'requesting roster'
         @requestRoster()
 
     @stanzas = []
