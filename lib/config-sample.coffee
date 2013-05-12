@@ -6,7 +6,9 @@ CLIENT = {
   priority: 5
   maintainer_jid: 'user@localhost'
   type: 'CLIENT'
-  #auto_subscribe: no # not yet implemented
+  #TODO auto_subscribe: no # not yet implemented
+  #TODO auto_unsubscribe: yes # not yet implemented
+  
 }
 
 module.exports = CLIENT

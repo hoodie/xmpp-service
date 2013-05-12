@@ -10,14 +10,26 @@ XmppNode      = require('./XmppNode').XmppNode
 #implements a discoverable service
 class exports.XmppService extends XmppNode
 
-  IDENTITY:
-    name: 'coffeescript component' #@jid.domain.split('.')[0]
-    category: 'test'
-    type: 'test'
-  ITEMS: []
+  IDENTITIES: [
+    #name = @JID.domain.split('.')[0]
+    { category: 'client', type: 'pc', name: 'sort of a client bot'}
+  ]
+
+  ITEMS:
+    alpha:
+      name:'alpha', callback: -> console.log 'alpha'
+    beta:
+      name:'beta', callback: -> console.log 'beta'
+    gamma:
+      name:'gamma', callback: -> console.log 'gamma'
+  
+  #REMOTECONTROL: # TODO XEP 0146
+
 
   constructor: (@config) ->
     super @config
+    @FEATURES.push @XMLNS.COMMANDS
+
 
   ###
   # Dispatchers
@@ -25,21 +37,49 @@ class exports.XmppService extends XmppNode
   ###
   dispatchIqSet: (stanza) ->
     super(stanza)
+    commands = stanza.getChildren('command', @XMLNS.COMMANDS)
+    @handleCommands commands
 
   dispatchIqGet: (stanza) ->
     super(stanza)
+
     if(stanza.getChild('query', @XMLNS.ITEMS))?
-      @warn 'items request (UNIMPLEMENTED)'
+      #@warn 'items request'
+
+      for query in stanza.getChildrenByAttr('node', @XMLNS.COMMANDS)
+        #@warn 'commands request'
+        @sendItems stanza
+        #@sendChat(stanza.from,"#{@XMLNS.COMMANDS} is not yet implemented.  (#{stanza.children[1].attrs.xmlns})") # FIXME
+
     if(stanza.getChild('query', @XMLNS.INFO))?
       @success 'info request'
-      @respondInfoResult stanza
+      @sendInfo stanza
 
-  respondInfoResult: (stanza = new xmpp.Stanza) ->
-    iq = new xmpp.Iq {type: 'result', to:stanza.from, from:@jid, id:stanza.id}
-    query = iq.c('query', {xmlns:@XMLNS.INFO})
-    query.c('identity', @identity)
-    for feature in @FEATURES
-      query.c('feature', {var: feature})
-    @outgoing iq.toString()
+
+  sendItems: (stanza = new xmpp.Stanza) ->
+    iq = new xmpp.Iq {type: 'result', to:stanza.from, from:@JID, id:stanza.id}
+    query = iq.c('query', {xmlns:@XMLNS.ITEMS, node:@XMLNS.COMMANDS})
+    # TODO XEP-0146
+    #for node, item of @REMOTECONTROL
+    #  query.c('item',{jid: @JID , name: item.name, node: "http://jabber.org/protocol/rc##{node}"})
+
+    # TODO XEP-0050
+    for node, item of @ITEMS
+      query.c('item',{jid: @JID , name: item.name, node: node})
     @send iq
 
+
+
+  sendInfo: (stanza = new xmpp.Stanza) ->
+    iq = new xmpp.Iq {type: 'result', to:stanza.from, from:@JID, id:stanza.id}
+    query = iq.c('query', {xmlns:@XMLNS.INFO})
+    for identity in @IDENTITIES
+      query.c('identity', identity)
+    for feature in @FEATURES
+      query.c('feature', {var: feature})
+    @send iq
+
+  handleCommands: (commands) ->
+    for command in commands
+      if command.attrs.node in Object.keys @ITEMS
+        @ITEMS[command.attrs.node].callback.call()
