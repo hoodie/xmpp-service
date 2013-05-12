@@ -138,6 +138,8 @@ class module.exports.XmppNode extends CliAble
   dispatchIqSet: (stanza) ->
 
   dispatchIqResult: (stanza) ->
+    @handleRoster(roster) for roster in stanza.getChildren('query', @XMLNS.ROSTER)
+
     #@handleRoster stanza if stanza.getChild()
 
   dispatchMessage: (stanza) ->
@@ -166,7 +168,7 @@ class module.exports.XmppNode extends CliAble
       @error stanza.toString()
 
   # (XEP-0202) Entity Time
-  handleTime: (stanza = new xmpp.Iq({type:'get', from: 'dummy', id:'fake'})) ->
+  handleTime: (stanza) ->
     date = new Date()
     iq = new xmpp.Iq {type: 'result', from: @jid, to: stanza.from, id: stanza.id}
     iq.c('time', {xmlns: @XMLNS.TIME})
@@ -179,3 +181,8 @@ class module.exports.XmppNode extends CliAble
     @warn 'PING', @XMLNS.PING
     iq = new xmpp.Iq {type: 'result', from: @jid, to: stanza.from, id: stanza.id}
     @connection.send iq
+
+  handleRoster: (query) ->
+    @roster = for item in query.getChildren 'item'
+      {name,jid} = item.attrs
+      {name,jid}

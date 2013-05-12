@@ -13,7 +13,7 @@ global.XmppNode    = XmppNode    = require('./XmppNode').XmppNode
 global.XmppService = XmppService = require('./XmppService').XmppService
 
 watchfiles = [
-  'chat.coffee'
+  'start.coffee'
   'config.coffee'
   'XmppNode.coffee'
   'XmppBasics.coffee'
@@ -21,7 +21,11 @@ watchfiles = [
   'XmppPresence.coffee'
 ]
 
-fs.watch '.', (event, path)-> process.exit() if (path in watchfiles)and event == 'change'
+fs.watch '.', (event, path)->
+  if (path in watchfiles)and event == 'change'
+    console.log event, path, '-> exiting'
+    process.exit()
+
 
 global.xmpp = xmpp
 
