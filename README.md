@@ -1,6 +1,10 @@
 # node-xmpp-node
 
-A platform to implement [XEPs](http://xmpp.org/xmpp-protocols/xmpp-extensions/) using [node-xmpp](https://github.com/astro/node-xmpp)
+A platform to implement [XEPs](http://xmpp.org/xmpp-protocols/xmpp-extensions/) using [node-xmpp](https://github.com/astro/node-xmpp).
+Basically high level xmpp features.  Planned examples include:
+* pubsub
+* muc bot
+* transport
 
 ## API and Design
 
