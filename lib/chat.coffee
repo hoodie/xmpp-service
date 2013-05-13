@@ -1,25 +1,14 @@
 #!/usr/bin/env coffee
 
-xmpp         = require "node-xmpp"
+global.xmpp = xmpp = require "node-xmpp"
 events       = require 'events'
 repl         = require 'repl'
 fs           = require 'fs'
 EventEmitter = events.EventEmitter
-
-
-config      = require "./config"
-
 global.XmppNode    = XmppNode    = require('./XmppNode').XmppNode
 global.XmppService = XmppService = require('./XmppService').XmppService
 
-watchfiles = [
-  'start.coffee'
-  'config.coffee'
-  'XmppNode.coffee'
-  'XmppBasics.coffee'
-  'XmppService.coffee'
-  'XmppPresence.coffee'
-]
+watchfiles = [ 'start.coffee', 'config.coffee', 'XmppNode.coffee', 'XmppBasics.coffee', 'XmppService.coffee', 'XmppPresence.coffee' ]
 
 fs.watch '.', (event, path)->
   if (path in watchfiles)and event == 'change'
@@ -27,9 +16,10 @@ fs.watch '.', (event, path)->
     process.exit()
 
 
-global.xmpp = xmpp
+config      = require "./config"
 
 global.xn  = xn = new XmppService config
+global.subclient  = subclient = new XmppService subclientconfig
 xn.connect()
 #xs.composeFeatures()
 
