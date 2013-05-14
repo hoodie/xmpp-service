@@ -2,3 +2,4 @@ config.coffee
 *.swp
 *.swo
 node_modules
+.directory

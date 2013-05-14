@@ -35,6 +35,7 @@ class exports.XmppPresence extends CliAble
 
   keep_alive: (interval = @presenceInterval) ->
     clearInterval @intervalId if @intervalId?
+    @send()
     @intervalId = setInterval (=>
       @send()
       d = new Date()
