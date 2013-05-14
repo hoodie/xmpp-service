@@ -20,11 +20,11 @@ XmppPresence = require('./XmppPresence').XmppPresence
 # http://xmpp.org/registrar/disco-categories.html
 #
 # TODO: rethink:
-#   stanza -> dispatchStanza
-#     -> <presence>
-#     -> <message>
-#     -> <iq>
-#       -> dispatchQuery for <query> in <iq>
+# NODES
+#   NODE
+#     IDENTITY
+#     FEATURES
+#     COMMANDS
 
 
 
