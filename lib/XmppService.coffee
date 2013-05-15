@@ -31,8 +31,6 @@ XmppPresence = require('./XmppPresence').XmppPresence
 ## basically routes stanza events to different dispatchrs
 class exports.XmppService extends CliAble
 
-  defaultEvents: ['stanza', 'message', 'presence', 'iq', 'iq.set', 'iq.get']
-
   XMLNS:
     ITEMS:    'http://jabber.org/protocol/disco#items'
     INFO:     'http://jabber.org/protocol/disco#info'
@@ -42,7 +40,6 @@ class exports.XmppService extends CliAble
     COMMANDS: 'http://jabber.org/protocol/commands'
 
 
-  #TODO: propagate features
   FEATURES: [
     'http://jabber.org/protocol/disco#info'  # (XEP-0030 Service Discovery)
     'http://jabber.org/protocol/disco#items' # (XEP-0030 Service Discovery)
@@ -59,14 +56,18 @@ class exports.XmppService extends CliAble
 
   IDENTITIES: [
     #name = @JID.domain.split('.')[0]
-    { category: 'client', type: 'pc', name: 'sort of a client bot'}
+    { category: 'client', type: 'pc', name: 'COFFEESCRIPT XmppService'}
   ]
 
   ITEMS:
     node_alpha:
-      name:'item alpha', jid: 'blub.nodejs.localhost'
+      name:'item alpha-parent', subjid: 'alpha', type: 'node', category: 'test', nodes:
+        node_alpha_child:
+          name:'item alpha-child', subjid: 'alpha2'
     node_beta:
-      name:'item beta', subjid: 'blub'
+      name:'item beta', subjid: 'beta', type: 'directory', category: 'test', nodes:
+        name:'item beta-child', subjid: 'beta2', type: 'node', category: 'test'
+
 
   COMMANDS:
     alpha:
@@ -82,20 +83,17 @@ class exports.XmppService extends CliAble
 
 
   constructor: (@config) ->
-    @success "XmppNode"
     {@host, @jid, @type} = @config
     @__defineGetter__ 'JID' , -> new xmpp.JID @jid
 
     @events = new EventEmitter()
 
     if @TYPES[@config.type] == @TYPES.CLIENT
-      @events.on 'online', =>
-        console.log 'requesting roster'
-        @requestRoster()
+      @events.on 'online', => @requestRoster()
 
     @stanzas = []
     @events.on 'send',     @stanzaPrint
-    @events.on 'stanza',   @stanzaPrint
+    #@events.on 'stanza',   @stanzaPrint
     @events.on 'stanza',   (stanza) => @stanzas.push stanza
     @events.on 'message',  ->
     @events.on 'presence', ->
@@ -105,7 +103,8 @@ class exports.XmppService extends CliAble
 
   connect: () ->
     @info 'connecting...'
-    console.time 'connecting'
+    @timelabel = "connecting #{@JID}"
+    console.time @timelabel
     switch @TYPES[@type]
       when 'client' then @connection = new xmpp.Client @config
       when 'component' then @connection = new xmpp.Component @config
@@ -115,8 +114,8 @@ class exports.XmppService extends CliAble
     @presence = new XmppPresence this
 
     @connection.on 'online', =>
+      console.timeEnd @timelabel
       @success '...connected!'
-      console.timeEnd 'connecting'
       @events.emit 'online'
       @presence.send() if @TYPES[@type] == 'client'
 
@@ -163,8 +162,6 @@ class exports.XmppService extends CliAble
       when 'presence' then @dispatchPresence stanza
       when 'iq'       then @dispatchIq stanza
       else @error "!", stanza.toString()
-  dispatchPresence: (stanza) ->
-    @events.emit 'presence', stanza
 
   dispatchPresence: (stanza) ->
     @events.emit 'presence', stanza
@@ -179,59 +176,45 @@ class exports.XmppService extends CliAble
 
   dispatchIqGet: (stanza) ->
     @events.emit 'iq.get', stanza
-    @handlePing(stanza) for ping in stanza.getChildren('ping', @XMLNS.PING) # (XEP-0199) XMPP Ping
-    @handleTime(stanza) for time in stanza.getChildren('time', @XMLNS.TIME) # (XEP-0202) Entity Time
+    @handleGetPing(stanza) for ping in stanza.getChildren('ping', @XMLNS.PING) # (XEP-0199) XMPP Ping
+    @handleGetTime(stanza) for time in stanza.getChildren('time', @XMLNS.TIME) # (XEP-0202) Entity Time
     if(query = stanza.getChild('query', @XMLNS.ITEMS))?
+      @info "subjid: #{@getSubJid stanza.to}"
+      @info "node: #{query.attrs.node}"
       if query.attrs.node == @XMLNS.COMMANDS
-        @warn 'commands request'
-        @handleIqCommands stanza
+        @warn "commands request from  #{stanza.from}"
+        @handleGetIqCommands stanza
       else
         @warn 'items request'
-        @handleIqItems stanza
+        @handleGetIqItems stanza
 
     if(stanza.getChild('query', @XMLNS.INFO))?
       @success 'info request'
-      @handleIqInfo stanza
+      @handleGetIqInfo stanza
 
   dispatchIqSet: (stanza) ->
+    @warn 'iq type=set'
     commands = stanza.getChildren('command', @XMLNS.COMMANDS)
-    @handleCommands commands
+    @handleSetCommands commands
 
   dispatchIqResult: (stanza) ->
-    @handleRoster(roster) for roster in stanza.getChildren('query', @XMLNS.ROSTER)
+    @handleGetRoster(roster) for roster in stanza.getChildren('query', @XMLNS.ROSTER)
 
-    #@handleRoster stanza if stanza.getChild()
+    #@handleGetRoster stanza if stanza.getChild()
 
   dispatchMessage: (stanza) ->
-    @handleMessage stanza
-
-
-  jidIsPrivileged: (jid)->
-    jid = new xmpp.JID(jid) if typeof jid == 'string'
-
-    jid.bare().toString() == @JID.bare().toString() or
-      jid.bare().toString() == new xmpp.JID(@config.maintainer_jid).bare().toString()
-
-  stanzaPrint: (stanza) =>
-    unless stanza.type == 'error'
-      if stanza.to == @JID.toString() or stanza.to == @JID.bare.toString()
-        @incomming stanza.toString()
-      else
-        @outgoing stanza.toString()
-    else
-      @error stanza.toString()
-
+    @handleGetMessage stanza
 
 
   ###
-  # Handlers
+  # handleGetrs
   ###
-  handleMessage: (message) =>
+  handleGetMessage: (message) =>
     console.log "#{clc.magenta.bold(message.from)}:
     #{clc.white.bold(message.getChildText('body'))}"
 
   # (XEP-0202) Entity Time
-  handleTime: (stanza) ->
+  handleGetTime: (stanza) ->
     date = new Date()
     iq = new xmpp.Iq {type: 'result', from: @JID, to: stanza.from, id: stanza.id}
     iq.c('time', {xmlns: @XMLNS.TIME})
@@ -240,17 +223,17 @@ class exports.XmppService extends CliAble
     @connection.send iq
 
   # (XEP-0199) XMPP Ping
-  handlePing: (stanza) ->
+  handleGetPing: (stanza) ->
     @warn 'PING', @XMLNS.PING
     iq = new xmpp.Iq {type: 'result', from: @JID, to: stanza.from, id: stanza.id}
     @connection.send iq
 
-  handleRoster: (query) ->
+  handleGetRoster: (query) ->
     @roster = for item in query.getChildren 'item'
       {name,jid} = item.attrs
       {name,jid}
 
-  handleIqItems: (stanza = new xmpp.Stanza) ->
+  handleGetIqItems: (stanza = new xmpp.Stanza) ->
     iq = new xmpp.Iq {type: 'result', to:stanza.from, from:@JID, id:stanza.id}
     query = iq.c('query', {xmlns:@XMLNS.ITEMS})
     for node, item of @ITEMS
@@ -260,7 +243,7 @@ class exports.XmppService extends CliAble
         query.c('item',{jid: item.jid , name: item.name, node: node})
     @send iq
 
-  handleIqCommands: (stanza) ->
+  handleGetIqCommands: (stanza) ->
     iq = new xmpp.Iq {type: 'result', to:stanza.from, from:@JID, id:stanza.id}
     query = iq.c('query', {xmlns:@XMLNS.ITEMS, node:@XMLNS.COMMANDS})
     # TODO XEP-0146
@@ -269,15 +252,20 @@ class exports.XmppService extends CliAble
 
     # TODO XEP-0050
     from = new xmpp.JID stanza.from
+
     if @jidIsPrivileged(from)
+      @success "#{from} is priviledged"
       for node, item of @PRIVATE_COMMANDS
         query.c('item',{jid: @JID , name: item.name, node: node})
+    else
+      @warn "#{from} not priviledged"
+
     for node, item of @COMMANDS
       query.c('item',{jid: @JID , name: item.name, node: node})
     @send iq
 
 
-  handleIqInfo: (stanza = new xmpp.Stanza) ->
+  handleGetIqInfo: (stanza = new xmpp.Stanza) ->
     iq = new xmpp.Iq {type: 'result', to:stanza.from, from:@JID, id:stanza.id}
     query = iq.c('query', {xmlns:@XMLNS.INFO})
     for identity in @IDENTITIES
@@ -288,12 +276,38 @@ class exports.XmppService extends CliAble
 
 
 
-  handleCommands: (commands) ->
+  handleSetCommands: (commands) ->
     for command in commands
-      if command.attrs.node in Object.keys @COMMANDS
-        @COMMANDS[command.attrs.node].callback.call()
-    if @jidIsPrivileged(command.parent.from)
-      if command.attrs.node in Object.keys @PRIVATE_COMMANDS
-        @PRIVATE_COMMANDS[command.attrs.node].callback.call()
+      @COMMANDS[command.attrs.node]?.callback.call()
 
+      if @jidIsPrivileged(command.parent.from)
+        @PRIVATE_COMMANDS[command.attrs.node]?.callback.call()
 
+  # TODO: push upstream node-xmpp/lib/xmpp/jid.js
+  # TODO: also FIX equals() and constructor to accept string and jid
+  sanitizeJid: (jid) ->
+    jid = new xmpp.JID(jid) if typeof jid == 'string'
+    jid.bare()
+
+  getSubJid: (jid) ->
+    jid = @sanitizeJid jid
+    jid.user if @JID.user != jid.user
+
+  jidIsPrivileged: (jid) ->
+    jid = @sanitizeJid jid
+    maintainer_jid = @sanitizeJid @config.maintainer_jid
+
+    jid.bare().equals(@JID.bare())or jid.bare().equals maintainer_jid
+
+  stanzaPrint: (stanza) =>
+    unless stanza.type == 'error' or not stanza.to?
+      to = new xmpp.JID(stanza.to)
+      if to.bare().equals @JID.bare()
+        if @getSubJid(to)?
+          @incomming2 stanza.toString()
+        else
+          @incomming stanza.toString()
+      else
+        @outgoing stanza.toString()
+    else
+      @error stanza.toString()

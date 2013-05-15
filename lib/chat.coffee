@@ -7,7 +7,7 @@ fs           = require 'fs'
 EventEmitter = events.EventEmitter
 global.XmppService = XmppService = require('./XmppService').XmppService
 
-watchfiles = [ 'chat.coffee', 'config.coffee', 'XmppService.coffee', 'XmppPresence.coffee' ]
+watchfiles = [ 'chat.coffee', 'config.coffee', 'XmppService.coffee', 'XmppPresence.coffee', 'CliAble.coffee' ]
 
 fs.watch '.', (event, path)->
   if (path in watchfiles)and event == 'change'
@@ -18,9 +18,9 @@ config      = require "./config"
 
 global.xn  = xn = new XmppService config.LOCALCLIENT
 global.xc  = xc = new XmppService config.COMPONENT
-xn.connect()
+#xn.connect()
 xc.connect()
-#xn.presence.keep_alive()
-#xs.composeFeatures()
+
+#xn.addNode
 
 repl.start { prompt: "coffee-chat: ", input: process.stdin, output: process.stdout, useGlobal: yes }
