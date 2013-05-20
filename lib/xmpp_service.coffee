@@ -6,16 +6,16 @@ EventEmitter = events.EventEmitter
 CliAble      = require('./cli_able').CliAble
 XmppPresence = require('./xmpp_presence').XmppPresence
 
-# TODO: Jabber RPC                (XEP-0009)
+# TODO: Donate tu Uganda (VIM is Charityware)
 # TODO: PubSub                    (XEP-0060)
 # TODO: Entity Capabilities       (XEP-0115)
 # TODO: Delayed Delivery          (XEP-0203)
-# TODO: Donate tu Uganda (VIM is Charityware)
 # TODO: Message Delivery Receipts (XEP-0184)
 #
 # TODO: service discovery         (XEP-0030, XEP-0128)
 # TODO: ad-hoc commands           (XEP-0050)
 # TODO: xml:lang for localization (read XEP-0030)
+#
 # http://xmpp.org/registrar/disco-features.html
 # http://xmpp.org/registrar/disco-categories.html
 #
@@ -69,6 +69,11 @@ class exports.XmppService extends CliAble
         name:'item beta-child', subjid: 'beta2', type: 'node', category: 'test'
 
 
+  ## attrs: jid?, subjid?,
+  #  identity: type, category
+  #addItem: (name, attrs, identity?, callback = undefined) ->
+
+
   COMMANDS:
     alpha:
       name:'command alpha', callback: -> console.log 'alpha'
@@ -87,6 +92,7 @@ class exports.XmppService extends CliAble
     @__defineGetter__ 'JID' , -> new xmpp.JID @jid
 
     @events = new EventEmitter()
+    @presence = new XmppPresence this
 
     if @TYPES[@config.type] == @TYPES.CLIENT
       @events.on 'online', => @requestRoster()
@@ -111,7 +117,6 @@ class exports.XmppService extends CliAble
       else
         @connection = undefined
         throw new Error "Undefined type off connection - Check config.coffee"
-    @presence = new XmppPresence this
 
     @connection.on 'online', =>
       console.timeEnd @timelabel
@@ -179,13 +184,11 @@ class exports.XmppService extends CliAble
     @handleGetPing(stanza) for ping in stanza.getChildren('ping', @XMLNS.PING) # (XEP-0199) XMPP Ping
     @handleGetTime(stanza) for time in stanza.getChildren('time', @XMLNS.TIME) # (XEP-0202) Entity Time
     if(query = stanza.getChild('query', @XMLNS.ITEMS))?
-      @info "subjid: #{@getSubJid stanza.to}"
-      @info "node: #{query.attrs.node}"
       if query.attrs.node == @XMLNS.COMMANDS
         @warn "commands request from  #{stanza.from}"
         @handleGetIqCommands stanza
       else
-        @warn 'items request'
+        @info "items request to node \"#{query.attrs.node}\" subjid: \"#{@getSubJid stanza.to}\""
         @handleGetIqItems stanza
 
     if(stanza.getChild('query', @XMLNS.INFO))?
@@ -207,13 +210,13 @@ class exports.XmppService extends CliAble
 
 
   ###
-  # handleGetrs
+  # handleGets
   ###
   handleGetMessage: (message) =>
     console.log "#{clc.magenta.bold(message.from)}:
     #{clc.white.bold(message.getChildText('body'))}"
 
-  # (XEP-0202) Entity Time
+  # XEP-0202: Entity Time
   handleGetTime: (stanza) ->
     date = new Date()
     iq = new xmpp.Iq {type: 'result', from: @JID, to: stanza.from, id: stanza.id}
@@ -222,7 +225,7 @@ class exports.XmppService extends CliAble
       .c('utc').t(date.toISOString())
     @connection.send iq
 
-  # (XEP-0199) XMPP Ping
+  # XEP-0199: XMPP Ping
   handleGetPing: (stanza) ->
     @warn 'PING', @XMLNS.PING
     iq = new xmpp.Iq {type: 'result', from: @JID, to: stanza.from, id: stanza.id}
