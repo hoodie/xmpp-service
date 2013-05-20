@@ -1,5 +1,5 @@
 xmpp      = require "node-xmpp"
-CliAble = require('./CliAble').CliAble
+CliAble = require('./cli_able').CliAble
 
 # TODO: Entity Capabilities       (XEP-0115)
 # TODO: Last Activity             (XEP-0012)

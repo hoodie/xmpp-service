@@ -3,8 +3,8 @@ events    = require 'events'
 clc        = require 'cli-color'
 
 EventEmitter = events.EventEmitter
-CliAble      = require('./CliAble').CliAble
-XmppPresence = require('./XmppPresence').XmppPresence
+CliAble      = require('./cli_able').CliAble
+XmppPresence = require('./xmpp_presence').XmppPresence
 
 # TODO: Jabber RPC                (XEP-0009)
 # TODO: PubSub                    (XEP-0060)
@@ -56,7 +56,7 @@ class exports.XmppService extends CliAble
 
   IDENTITIES: [
     #name = @JID.domain.split('.')[0]
-    { category: 'client', type: 'pc', name: 'COFFEESCRIPT XmppService'}
+    { category: 'client', type: 'pc', name: 'Coffeescript XmppService'}
   ]
 
   ITEMS:

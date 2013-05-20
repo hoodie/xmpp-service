@@ -5,7 +5,7 @@ events       = require 'events'
 repl         = require 'repl'
 fs           = require 'fs'
 EventEmitter = events.EventEmitter
-global.XmppService = XmppService = require('./XmppService').XmppService
+global.XmppService = XmppService = require('./xmpp_service').XmppService
 
 watchfiles = [ 'chat.coffee', 'config.coffee', 'XmppService.coffee', 'XmppPresence.coffee', 'CliAble.coffee' ]
 
