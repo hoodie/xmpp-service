@@ -19,11 +19,11 @@ fs.watch '.', (event, path)->
 
 config      = require "./config"
 
-global.client  = client = new XmppClient config.LOCALCLIENT
-global.comp  = comp = new XmppService config.COMPONENT
-#comp.connect()
+global.client = client = new XmppService config.LOCALCLIENT
+global.comp   = comp   = new XmppService config.COMPONENT
+comp.connect()
 
 #comp.addItem ''
 
 
-repl.start { prompt: "coffee-chat: ", input: process.stdin, output: process.stdout, useGlobal: yes }
+repl.start { prompt: "xmpp: ", input: process.stdin, output: process.stdout, useGlobal: yes }

@@ -3,7 +3,6 @@ events    = require 'events'
 clc        = require 'cli-color'
 
 EventEmitter = events.EventEmitter
-CliAble      = require('./cli_able').CliAble
 XmppPresence = require('./xmpp_presence').XmppPresence
 
 # TODO: Donate tu Uganda (VIM is Charityware)
@@ -314,3 +313,13 @@ class exports.XmppService extends CliAble
         @outgoing stanza.toString()
     else
       @error stanza.toString()
+
+  error      : (t) -> console.error clc.redBright.bold   "\n☠\n#{t}"
+  warn       : (t) -> console.log   clc.redBright.bold   "!#{t}"
+  info       : (t) -> console.log   clc.blueBright.bold  "#{t}"
+ #incomming  : (t) -> console.log   clc.blackBright      "#{t}"
+  incomming  : (t) -> console.log   clc.xterm(120)       "\n→ #{t}"
+  incomming2 : (t) -> console.log   clc.xterm(250)       "\n→ #{t}"
+  outgoing   : (t) -> console.log   clc.xterm(230)       "\n← #{t}"
+  success    : (t) -> console.log   clc.greenBright      "#{t}"
+

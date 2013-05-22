@@ -50,5 +50,6 @@ class exports.XmppClient extends XmppService
     console.log form.toString()
     
 
+  takeForm: (form_xml) ->
 
 
