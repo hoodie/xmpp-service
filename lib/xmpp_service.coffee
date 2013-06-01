@@ -117,6 +117,7 @@ class exports.XmppService
         @connection = undefined
         throw new Error "Undefined type off connection - Check config.coffee"
 
+    @connection.reconnectDelay = @config.reconnectDelay
     @connection.on 'online', =>
       console.timeEnd @timelabel
       @success '...connected!'

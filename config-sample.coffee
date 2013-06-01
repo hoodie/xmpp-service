@@ -4,6 +4,7 @@ CLIENT = {
   host: 'localhost'
   port: 5222
   reconnect: yes
+  reconnectDelay: 30 #seconds
   priority: 5
   maintainer_jid: 'user@localhost'
   type: 'CLIENT'
