@@ -4,11 +4,11 @@ global.xmpp = xmpp = require "node-xmpp"
 events       = require 'events'
 repl         = require 'repl'
 fs           = require 'fs'
-global.ltx   = require 'ltx'
+#global.ltx   = require 'ltx'
 
 EventEmitter = events.EventEmitter
 global.XmppService = XmppService = require('./xmpp_service').XmppService
-global.XmppClient = XmppClient = require('./client').XmppClient
+#global.XmppClient = XmppClient = require('./client').XmppClient
 
 watchfiles = [ 'chat.coffee', 'client.coffee', 'config.coffee', 'xmpp_service.coffee', 'xmpp_presence.coffee', 'cli_able.coffee' ]
 
@@ -19,7 +19,8 @@ fs.watch '.', (event, path)->
 
 config      = require "./config"
 
-global.client = client = new XmppService config.LOCALCLIENT
+#global.client = client = new XmppService config.LOCALCLIENT
+global.client = client = new XmppService config.CLIENT
 global.comp   = comp   = new XmppService config.COMPONENT
 comp.connect()
 

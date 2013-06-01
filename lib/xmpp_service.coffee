@@ -28,7 +28,7 @@ XmppPresence = require('./xmpp_presence').XmppPresence
 
 
 ## basically routes stanza events to different dispatchrs
-class exports.XmppService extends CliAble
+class exports.XmppService
 
   XMLNS:
     ITEMS:    'http://jabber.org/protocol/disco#items'

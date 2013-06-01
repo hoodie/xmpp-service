@@ -5,6 +5,7 @@
   "main": "index.js",
   "dependencies": {
     "cli-color": "~0.2.2",
+    "ltx": ">= 0.1.1",
     "node-xmpp": "~0.3.2",
     "mocha": "~1.9.0",
     "request": "~2.21.0"

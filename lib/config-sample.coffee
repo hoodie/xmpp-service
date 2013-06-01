@@ -11,4 +11,4 @@ CLIENT = {
   
 }
 
-module.exports = CLIENT
+module.exports = {CLIENT}
