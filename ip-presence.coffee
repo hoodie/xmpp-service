@@ -12,9 +12,9 @@ config      = require "./config"
 
 
 
-global.client = client = new XmppService config.CLIENT
-client.connect()
-#client.presence.keep_alive()
+global.client = client = new XmppService config.PI
+#client.connect()
+client.presence.keep_alive()
 
 global.ip_presence = ip_presence = ->
   request 'http://ip.hoodie.de/', (error, response, body) ->

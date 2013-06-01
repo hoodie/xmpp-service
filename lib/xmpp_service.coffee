@@ -131,8 +131,11 @@ class exports.XmppService
     return
 
   send: (stanza) ->
-    @events.emit 'send', stanza
-    @connection.send stanza
+    if @connection?
+      @events.emit 'send', stanza
+      @connection.send stanza
+    else
+      @warn "Cant send #{stanza.name}"
 
   sendChat: (to, message) ->
     stanza = new xmpp.Message({ to: to, type: 'chat' })
