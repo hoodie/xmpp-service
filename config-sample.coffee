@@ -3,6 +3,7 @@ CLIENT = {
   password: 'bot'
   host: 'localhost'
   port: 5222
+  reconnect: yes
   priority: 5
   maintainer_jid: 'user@localhost'
   type: 'CLIENT'

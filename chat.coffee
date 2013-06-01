@@ -7,8 +7,8 @@ fs           = require 'fs'
 #global.ltx   = require 'ltx'
 
 EventEmitter = events.EventEmitter
-global.XmppService = XmppService = require('./xmpp_service').XmppService
-#global.XmppClient = XmppClient = require('./client').XmppClient
+global.XmppService = XmppService = require('./lib/xmpp_service').XmppService
+#global.XmppClient = XmppClient = require('./lib/client').XmppClient
 
 watchfiles = [ 'chat.coffee', 'client.coffee', 'config.coffee', 'xmpp_service.coffee', 'xmpp_presence.coffee', 'cli_able.coffee' ]
 
